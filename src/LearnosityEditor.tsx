@@ -3,17 +3,17 @@ import React from 'react';
 import { jsx } from '@emotion/core';
 import { Builder } from '@builder.io/sdk';
 import { Typography, Button } from '@material-ui/core';
-import { CloudinaryMediaLibraryDialog, CloudinaryImage } from './CloudinaryMediaLibraryDialog';
-import CloudinayCredentialsDialog from './CloudinaryCredentialsDialog';
+import { LearnosityPickerDialog, LearnosityActivity } from './LearnosityActivityPicker';
+import CloudinayCredentialsDialog from './LearnosityCredentialsDialog';
 
 interface Props {
   value?: any;
-  onChange(newValue: CloudinaryImage): void;
+  onChange(newValue: LearnosityActivity): void;
   context: any;
 }
 
 // No need to use username for cloudinary login if SSO is enabled
-interface CloudinaryImageEditorState {
+interface LearnosityEditorState {
   showDialog: boolean;
   apiKey: string | undefined;
   cloudName: string | undefined;
@@ -23,9 +23,9 @@ interface CloudinaryImageEditorState {
 
 type ButtonVariant = 'text' | 'contained';
 
-export default class CloudinaryImageEditor extends React.Component<
+export default class LearnosityEditor extends React.Component<
   Props,
-  CloudinaryImageEditorState
+  LearnosityEditorState
 > {
   get organization() {
     return this.props.context.user.organization;
@@ -108,7 +108,7 @@ export default class CloudinaryImageEditor extends React.Component<
     return this.areCloudinaryCredentialsNotSet() ? 'contained' : 'text';
   }
 
-  private selectImage(image: CloudinaryImage) {
+  private selectImage(image: LearnosityActivity) {
     this.props.onChange(image);
     this.setState({ selectedImagePublicId: image.public_id });
   }
@@ -163,7 +163,7 @@ export default class CloudinaryImageEditor extends React.Component<
           />
         )}
         {!shouldRequestCloudinarySettings && (
-          <CloudinaryMediaLibraryDialog
+          <LearnosityPickerDialog
             openDialog={this.state.showDialog}
             closeDialog={this.closeDialog.bind(this)}
             selectImage={this.selectImage.bind(this)}
@@ -210,6 +210,6 @@ export default class CloudinaryImageEditor extends React.Component<
 }
 
 Builder.registerEditor({
-  name: 'cloudinaryImageEditor',
-  component: CloudinaryImageEditor,
+  name: 'learnosityEditor',
+  component: LearnosityEditor,
 });

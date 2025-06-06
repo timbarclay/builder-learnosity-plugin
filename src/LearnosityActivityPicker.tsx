@@ -3,15 +3,15 @@ import React, { Fragment } from 'react';
 import { jsx } from '@emotion/core';
 import { Dialog, Button, DialogActions } from '@material-ui/core';
 
-interface CloudinaryMediaLibraryDialogProps {
+interface LearnosityPickerDialogProps {
   openDialog: boolean;
   closeDialog(): void;
-  selectImage(image: CloudinaryImage): void;
+  selectImage(image: LearnosityActivity): void;
   apiKey: string | undefined;
   cloudName: string | undefined;
 }
 
-export interface CloudinaryImage {
+export interface LearnosityActivity {
   context: any;
   public_id: string;
   url: string;
@@ -19,7 +19,7 @@ export interface CloudinaryImage {
   derived: any[];
 }
 
-export class CloudinaryMediaLibraryDialog extends React.Component<CloudinaryMediaLibraryDialogProps> {
+export class LearnosityPickerDialog extends React.Component<LearnosityPickerDialogProps> {
   private generateNewMediaLibrary(): any {
     let mediaLibrary: any;
     const newWindow = window as any;

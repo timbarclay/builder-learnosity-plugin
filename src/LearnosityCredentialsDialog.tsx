@@ -10,7 +10,7 @@ import {
   TextField,
 } from '@material-ui/core';
 
-interface CloudinaryCredentialsDialogProps {
+interface LearnosityCredentialsDialogProps {
   openDialog: boolean;
   apiKey: string | undefined;
   cloudName: string | undefined;
@@ -18,16 +18,16 @@ interface CloudinaryCredentialsDialogProps {
   updateCloudinaryCredentials(apiKey: string, cloudName: string): void;
 }
 
-interface CloudinaryCredentialsDialogState {
+interface LearnosityCredentialsDialogState {
   apiKey: string;
   cloudName: string;
 }
 
-export default class CloudinaryCredentialsDialog extends React.Component<
-  CloudinaryCredentialsDialogProps,
-  CloudinaryCredentialsDialogState
+export default class LearnosityCredentialsDialog extends React.Component<
+  LearnosityCredentialsDialogProps,
+  LearnosityCredentialsDialogState
 > {
-  constructor(props: CloudinaryCredentialsDialogProps) {
+  constructor(props: LearnosityCredentialsDialogProps) {
     super(props);
     this.state = {
       apiKey: this.props.apiKey ? this.props.apiKey : '',
