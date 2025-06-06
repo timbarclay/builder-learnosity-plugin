@@ -12,15 +12,13 @@ import {
 
 interface LearnosityCredentialsDialogProps {
   openDialog: boolean;
-  apiKey: string | undefined;
-  cloudName: string | undefined;
+  initUrl: string | undefined;
   closeDialog(): void;
-  updateCloudinaryCredentials(apiKey: string, cloudName: string): void;
+  updateLearnosityCredentials(initUrl: string): void;
 }
 
 interface LearnosityCredentialsDialogState {
-  apiKey: string;
-  cloudName: string;
+  initUrl: string;
 }
 
 export default class LearnosityCredentialsDialog extends React.Component<
@@ -30,8 +28,7 @@ export default class LearnosityCredentialsDialog extends React.Component<
   constructor(props: LearnosityCredentialsDialogProps) {
     super(props);
     this.state = {
-      apiKey: this.props.apiKey ? this.props.apiKey : '',
-      cloudName: this.props.cloudName ? this.props.cloudName : '',
+      initUrl: this.props.initUrl ? this.props.initUrl : '',
     };
   }
 
@@ -39,23 +36,14 @@ export default class LearnosityCredentialsDialog extends React.Component<
     return (
       <div>
         <Dialog open={this.props.openDialog} onClose={this.props.closeDialog}>
-          <DialogTitle>Cloudinary credentials setup</DialogTitle>
+          <DialogTitle>Learnosity credentials setup</DialogTitle>
           <DialogContent>
             <TextField
-              value={this.state.apiKey}
-              onChange={(e: any) => this.setState({ apiKey: e.target.value })}
+              value={this.state.initUrl}
+              onChange={(e: any) => this.setState({ initUrl: e.target.value })}
               id="apiKey"
-              label="API key"
-              helperText="You just have to setup the API key once and it will be linked to your organization"
-              margin="normal"
-              autoComplete="off"
-            />
-            <TextField
-              value={this.state.cloudName}
-              onChange={(e: any) => this.setState({ cloudName: e.target.value })}
-              id="cloudName"
-              label="Cloud name"
-              helperText="You just have to setup the cloud name once and it will be linked to your organization"
+              label="Initialisation URL"
+              helperText="An API endpoint that will return a Learnosity request JSON object"
               margin="normal"
               autoComplete="off"
             />
@@ -66,7 +54,7 @@ export default class LearnosityCredentialsDialog extends React.Component<
             </Button>
             <Button
               onClick={() => {
-                this.props.updateCloudinaryCredentials(this.state.apiKey, this.state.cloudName);
+                this.props.updateLearnosityCredentials(this.state.initUrl);
                 this.props.closeDialog();
               }}
               color="primary"

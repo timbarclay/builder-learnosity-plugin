@@ -1,10 +1,11 @@
 System.register(['react', '@emotion/core', '@builder.io/sdk', '@material-ui/core'], (function (exports) {
   'use strict';
-  var React, Fragment, jsx, Builder, Dialog, DialogActions, Button, DialogTitle, DialogContent, TextField, Typography;
+  var useState, useEffect, React, jsx, Builder, Dialog, DialogActions, Button, DialogTitle, DialogContent, TextField, Typography;
   return {
     setters: [function (module) {
+      useState = module.useState;
+      useEffect = module.useEffect;
       React = module["default"];
-      Fragment = module.Fragment;
     }, function (module) {
       jsx = module.jsx;
     }, function (module) {
@@ -21,96 +22,132 @@ System.register(['react', '@emotion/core', '@builder.io/sdk', '@material-ui/core
     execute: (function () {
 
       /** @jsx jsx */
-      class CloudinaryMediaLibraryDialog extends React.Component {
-          generateNewMediaLibrary() {
-              let mediaLibrary;
-              const newWindow = window;
-              if (newWindow.cloudinary) {
-                  mediaLibrary = this.createMediaLibrary(mediaLibrary, newWindow);
+      function LearnosityActivityPickerDialog(props) {
+          const [libraryLoaded, setLibraryLoaded] = useState(false);
+          const [begunLibraryLoad, setBegunLibraryLoad] = useState(false);
+          const [learnosityRequest, setLearnosityRequest] = useState(null);
+          const [learnosityRequestBegun, setLearnosityRequestBegun] = useState(false);
+          const [rendered, setRendered] = useState(false);
+          useEffect(() => {
+              if (!rendered || begunLibraryLoad)
+                  return;
+              setBegunLibraryLoad(true);
+              loadJS('https://authorapi.learnosity.com?v2025.1.LTS', () => {
+                  console.log('Library loaded');
+                  setLibraryLoaded(true);
+              });
+          }, [rendered, begunLibraryLoad]);
+          useEffect(() => {
+              var _a;
+              if (learnosityRequestBegun)
+                  return;
+              setLearnosityRequestBegun(true);
+              fetch((_a = props.initUrl, (_a !== null && _a !== void 0 ? _a : '')), {
+                  method: 'POST',
+                  body: JSON.stringify({
+                      domain: location.hostname,
+                      request: {
+                          mode: 'activity_list',
+                          user: {
+                              id: 'demos-site',
+                              firstname: 'Demos',
+                              lastname: 'User',
+                              email: 'demos@learnosity.com',
+                          },
+                      },
+                  }),
+              })
+                  .then((res) => res.json())
+                  .then((data) => {
+                  setLearnosityRequest(data.request);
+              });
+          }, [learnosityRequestBegun]);
+          useEffect(() => {
+              if (!libraryLoaded || !window.LearnosityAuthor) {
+                  console.log('LearnosityAuthor not loaded');
+                  return;
               }
-              return mediaLibrary;
-          }
-          openCloudinaryMediaLibrary() {
-              const mediaLibrary = this.generateNewMediaLibrary();
-              this.showMediaLibrary(mediaLibrary);
-          }
-          showMediaLibrary(mediaLibrary) {
-              if (mediaLibrary) {
-                  mediaLibrary.show({
-                      multiple: false,
-                      max_files: 1,
-                  });
+              if (!learnosityRequest) {
+                  console.log('learnosityRequest not found');
+                  return;
               }
-          }
-          createMediaLibrary(mediaLibrary, newWindow) {
-              mediaLibrary = newWindow.cloudinary.createMediaLibrary({
-                  cloud_name: this.props.cloudName ? this.props.cloudName : '',
-                  api_key: this.props.apiKey ? this.props.apiKey : '',
-                  inline_container: '.cloudinaryContainer',
-              }, {
-                  insertHandler: (data) => {
-                      this.selectImage(Object.assign({}, data.assets[0]));
+              console.debug('Initializing LearnosityItems');
+              const authorApi = window.LearnosityAuthor.init(learnosityRequest, {
+                  readyListener: () => {
+                      console.log('readyListener');
+                      authorApi.on('open:activity', (event) => {
+                          console.log('open:activity', event.data);
+                          props.selectActivity(event.data);
+                      });
+                      authorApi.on('save:activity:success', (event) => {
+                          props.selectActivity(event.data);
+                      });
+                  },
+                  errorListener: (error) => {
+                      console.error('errorListener', error);
                   },
               });
-              return mediaLibrary;
+          }, [libraryLoaded, learnosityRequest]);
+          return (jsx(Dialog, { open: props.openDialog, onClose: props.closeDialog, fullWidth: true, maxWidth: "lg", onRendered: () => {
+                  setRendered(true);
+              } },
+              jsx("div", { id: "learnosity-author", css: { height: '90vh' } }),
+              jsx(DialogActions, null,
+                  jsx(Button, { autoFocus: true, onClick: props.closeDialog, color: "primary" }, "Close learnosity"))));
+      }
+      function loadJS(url, callback) {
+          const existingScript = document.getElementById('learnosity-library');
+          if (!existingScript) {
+              const script = document.createElement('script');
+              script.src = url;
+              script.id = 'learnosity-library';
+              document.body.appendChild(script);
+              script.onload = () => {
+                  if (callback) {
+                      return callback();
+                  }
+                  return true;
+              };
           }
-          selectImage(cloudinaryData) {
-              this.props.selectImage(cloudinaryData);
-              this.props.closeDialog();
+          if (existingScript && callback) {
+              return callback();
           }
-          render() {
-              return (jsx(Fragment, null,
-                  jsx(Dialog, { open: this.props.openDialog, onClose: this.props.closeDialog, fullWidth: true, maxWidth: "lg", onRendered: () => {
-                          this.openCloudinaryMediaLibrary();
-                      } },
-                      jsx("div", { className: "cloudinaryContainer", css: { height: '90vh' } }),
-                      jsx(DialogActions, null,
-                          jsx(Button, { autoFocus: true, onClick: this.props.closeDialog, color: "primary" }, "Close media library")))));
-          }
+          return true;
       }
 
       /** @jsx jsx */
-      class CloudinaryCredentialsDialog extends React.Component {
+      class LearnosityCredentialsDialog extends React.Component {
           constructor(props) {
               super(props);
               this.state = {
-                  apiKey: this.props.apiKey ? this.props.apiKey : '',
-                  cloudName: this.props.cloudName ? this.props.cloudName : '',
+                  initUrl: this.props.initUrl ? this.props.initUrl : '',
               };
           }
           render() {
               return (jsx("div", null,
                   jsx(Dialog, { open: this.props.openDialog, onClose: this.props.closeDialog },
-                      jsx(DialogTitle, null, "Cloudinary credentials setup"),
+                      jsx(DialogTitle, null, "Learnosity credentials setup"),
                       jsx(DialogContent, null,
-                          jsx(TextField, { value: this.state.apiKey, onChange: (e) => this.setState({ apiKey: e.target.value }), id: "apiKey", label: "API key", helperText: "You just have to setup the API key once and it will be linked to your organization", margin: "normal", autoComplete: "off" }),
-                          jsx(TextField, { value: this.state.cloudName, onChange: (e) => this.setState({ cloudName: e.target.value }), id: "cloudName", label: "Cloud name", helperText: "You just have to setup the cloud name once and it will be linked to your organization", margin: "normal", autoComplete: "off" })),
+                          jsx(TextField, { value: this.state.initUrl, onChange: (e) => this.setState({ initUrl: e.target.value }), id: "apiKey", label: "Initialisation URL", helperText: "An API endpoint that will return a Learnosity request JSON object", margin: "normal", autoComplete: "off" })),
                       jsx(DialogActions, null,
                           jsx(Button, { onClick: this.props.closeDialog, color: "primary" }, "Close"),
                           jsx(Button, { onClick: () => {
-                                  this.props.updateCloudinaryCredentials(this.state.apiKey, this.state.cloudName);
+                                  this.props.updateLearnosityCredentials(this.state.initUrl);
                                   this.props.closeDialog();
                               }, color: "primary", variant: "contained" }, "Save")))));
           }
       }
 
       /** @jsx jsx */
-      class CloudinaryImageEditor extends React.Component {
+      class LearnosityEditor extends React.Component {
           get organization() {
               return this.props.context.user.organization;
           }
-          get cloudinaryCloud() {
-              return this.organization.value.settings.plugins.get('cloudinaryCloud');
+          get learnosityInitUrl() {
+              return this.organization.value.settings.plugins.get('learnosityInitUrl');
           }
-          set cloudinaryCloud(cloud) {
-              this.organization.value.settings.plugins.set('cloudinaryCloud', cloud);
-              this.organization.save();
-          }
-          get cloudinaryKey() {
-              return this.organization.value.settings.plugins.get('cloudinaryKey');
-          }
-          set cloudinaryKey(key) {
-              this.organization.value.settings.plugins.set('cloudinaryKey', key);
+          set learnosityInitUrl(key) {
+              this.organization.value.settings.plugins.set('learnosityInitUrl', key);
               this.organization.save();
           }
           constructor(props) {
@@ -118,10 +155,9 @@ System.register(['react', '@emotion/core', '@builder.io/sdk', '@material-ui/core
               this.state = {
                   requestCredentials: false,
                   showDialog: false,
-                  apiKey: this.cloudinaryKey ? this.cloudinaryKey : '',
-                  cloudName: this.cloudinaryCloud ? this.cloudinaryCloud : '',
-                  selectedImagePublicId: props.value && props.value.get && props.value.get('public_id')
-                      ? props.value.get('public_id')
+                  initUrl: this.learnosityInitUrl ? this.learnosityInitUrl : '',
+                  selectedActivityReference: props.value && props.value.get && props.value.get('reference')
+                      ? props.value.get('reference')
                       : '',
               };
           }
@@ -131,63 +167,46 @@ System.register(['react', '@emotion/core', '@builder.io/sdk', '@material-ui/core
                   showDialog: false,
               });
           }
-          appendMediaLibraryScriptToPlugin() {
-              const previousScript = document.getElementById('cloudinaryScript');
-              if (!previousScript) {
-                  const script = document.createElement('script');
-                  script.async = true;
-                  script.src = `https://media-library.cloudinary.com/global/all.js`;
-                  script.id = 'cloudinaryScript';
-                  document.head.appendChild(script);
-              }
+          areLearnosityCredentialsNotSet() {
+              return (this.state.initUrl === '' ||
+                  this.state.initUrl === undefined);
           }
-          areCloudinaryCredentialsNotSet() {
-              return (this.state.apiKey === '' ||
-                  this.state.cloudName === '' ||
-                  this.state.apiKey === undefined ||
-                  this.state.cloudName === undefined);
+          shouldRequestLearnosityCredentials() {
+              return this.state.requestCredentials || this.areLearnosityCredentialsNotSet();
           }
-          shouldRequestCloudinaryCredentials() {
-              return this.state.requestCredentials || this.areCloudinaryCredentialsNotSet();
-          }
-          updateCloudinaryCredentials(apiKey, cloudName) {
-              this.cloudinaryKey = apiKey;
-              this.cloudinaryCloud = cloudName;
+          updateLearnosityCredentials(initUrl) {
+              this.learnosityInitUrl = initUrl;
               this.setState({
-                  apiKey: this.cloudinaryKey,
-                  cloudName: this.cloudinaryCloud,
+                  initUrl: this.learnosityInitUrl,
               });
           }
-          calculateChooseImageButtonVariant() {
-              return this.areCloudinaryCredentialsNotSet() ? 'contained' : 'text';
+          calculateChooseActivityButtonVariant() {
+              return this.areLearnosityCredentialsNotSet() ? 'contained' : 'text';
           }
-          selectImage(image) {
-              this.props.onChange(image);
-              this.setState({ selectedImagePublicId: image.public_id });
+          selectActivity(activity) {
+              this.props.onChange(activity);
+              this.setState({ selectedActivityReference: activity.reference });
           }
           buildSelectedIdMessage() {
-              if (this.state.selectedImagePublicId) {
-                  return `Public id: ${this.state.selectedImagePublicId}`;
+              if (this.state.selectedActivityReference) {
+                  return `Activity reference: ${this.state.selectedActivityReference}`;
               }
-              return 'Please choose an image';
+              return 'Please choose an activity';
           }
-          buildChooseImageText() {
-              if (this.state.selectedImagePublicId) {
-                  return `UPDATE IMAGE`;
+          buildChooseActivityText() {
+              if (this.state.selectedActivityReference) {
+                  return `UPDATE ACTIVITY`;
               }
-              return 'CHOOSE IMAGE';
+              return 'CHOOSE ACTIVITY';
           }
           setCredentialsButtonText() {
-              return this.areCloudinaryCredentialsNotSet() ? 'Set credentials' : '...';
-          }
-          componentDidMount() {
-              this.appendMediaLibraryScriptToPlugin();
+              return this.areLearnosityCredentialsNotSet() ? 'Set credentials' : '...';
           }
           render() {
-              const shouldRequestCloudinarySettings = this.shouldRequestCloudinaryCredentials();
-              const setCredentialsButtonVariant = this.calculateChooseImageButtonVariant();
-              const selectedPublicIdMessage = this.buildSelectedIdMessage();
-              const chooseImageButtonText = this.buildChooseImageText();
+              const shouldRequestLearnositySettings = this.shouldRequestLearnosityCredentials();
+              const setCredentialsButtonVariant = this.calculateChooseActivityButtonVariant();
+              const selectedActivityReferenceMessage = this.buildSelectedIdMessage();
+              const chooseActivityButtonText = this.buildChooseActivityText();
               const setCredentialsButtonText = this.setCredentialsButtonText();
               const buttonContainerStyle = {
                   display: 'grid',
@@ -197,15 +216,15 @@ System.register(['react', '@emotion/core', '@builder.io/sdk', '@material-ui/core
                   marginBottom: '5px',
               };
               return (jsx("div", { css: { padding: '15px 0' } },
-                  jsx(Typography, { variant: "caption" }, "Cloudinary image picker"),
-                  shouldRequestCloudinarySettings && (jsx(CloudinaryCredentialsDialog, { openDialog: this.state.showDialog, closeDialog: this.closeDialog.bind(this), updateCloudinaryCredentials: this.updateCloudinaryCredentials.bind(this), apiKey: this.state.apiKey, cloudName: this.state.cloudName })),
-                  !shouldRequestCloudinarySettings && (jsx(CloudinaryMediaLibraryDialog, { openDialog: this.state.showDialog, closeDialog: this.closeDialog.bind(this), selectImage: this.selectImage.bind(this), apiKey: this.state.apiKey, cloudName: this.state.cloudName })),
+                  jsx(Typography, { variant: "caption" }, "Learnosity activity picker"),
+                  shouldRequestLearnositySettings && (jsx(LearnosityCredentialsDialog, { openDialog: this.state.showDialog, closeDialog: this.closeDialog.bind(this), updateLearnosityCredentials: this.updateLearnosityCredentials.bind(this), initUrl: this.state.initUrl })),
+                  !shouldRequestLearnositySettings && (jsx(LearnosityActivityPickerDialog, { openDialog: this.state.showDialog, closeDialog: this.closeDialog.bind(this), selectActivity: this.selectActivity.bind(this), initUrl: this.state.initUrl })),
                   jsx("div", { css: buttonContainerStyle },
-                      jsx(Button, { disabled: this.areCloudinaryCredentialsNotSet(), color: "primary", variant: "contained", onClick: () => {
+                      jsx(Button, { disabled: this.areLearnosityCredentialsNotSet(), color: "primary", variant: "contained", onClick: () => {
                               this.setState({
                                   showDialog: !this.state.showDialog,
                               });
-                          } }, chooseImageButtonText),
+                          } }, chooseActivityButtonText),
                       jsx(Button, { variant: setCredentialsButtonVariant, color: "primary", onClick: () => {
                               this.setState({
                                   requestCredentials: true,
@@ -213,12 +232,12 @@ System.register(['react', '@emotion/core', '@builder.io/sdk', '@material-ui/core
                               });
                           } }, setCredentialsButtonText)),
                   jsx("div", null,
-                      jsx(Typography, { css: { margin: '5px' }, variant: "caption" }, selectedPublicIdMessage))));
+                      jsx(Typography, { css: { margin: '5px' }, variant: "caption" }, selectedActivityReferenceMessage))));
           }
-      } exports('default', CloudinaryImageEditor);
+      } exports('default', LearnosityEditor);
       Builder.registerEditor({
           name: 'learnosityEditor',
-          component: CloudinaryImageEditor,
+          component: LearnosityEditor,
       });
 
     })

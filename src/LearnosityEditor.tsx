@@ -3,8 +3,8 @@ import React from 'react';
 import { jsx } from '@emotion/core';
 import { Builder } from '@builder.io/sdk';
 import { Typography, Button } from '@material-ui/core';
-import { LearnosityPickerDialog, LearnosityActivity } from './LearnosityActivityPicker';
-import CloudinayCredentialsDialog from './LearnosityCredentialsDialog';
+import { LearnosityActivityPickerDialog, LearnosityActivity } from './LearnosityActivityPicker';
+import LearnosityCredentialsDialog from './LearnosityCredentialsDialog';
 
 interface Props {
   value?: any;
@@ -12,13 +12,11 @@ interface Props {
   context: any;
 }
 
-// No need to use username for cloudinary login if SSO is enabled
 interface LearnosityEditorState {
   showDialog: boolean;
-  apiKey: string | undefined;
-  cloudName: string | undefined;
+  initUrl: string | undefined;
   requestCredentials: boolean;
-  selectedImagePublicId: string | undefined;
+  selectedActivityReference: string | undefined;
 }
 
 type ButtonVariant = 'text' | 'contained';
@@ -31,21 +29,12 @@ export default class LearnosityEditor extends React.Component<
     return this.props.context.user.organization;
   }
 
-  get cloudinaryCloud(): string | undefined {
-    return this.organization.value.settings.plugins.get('cloudinaryCloud');
+  get learnosityInitUrl(): string | undefined {
+    return this.organization.value.settings.plugins.get('learnosityInitUrl');
   }
 
-  set cloudinaryCloud(cloud: string | undefined) {
-    this.organization.value.settings.plugins.set('cloudinaryCloud', cloud);
-    this.organization.save();
-  }
-
-  get cloudinaryKey(): string | undefined {
-    return this.organization.value.settings.plugins.get('cloudinaryKey');
-  }
-
-  set cloudinaryKey(key: string | undefined) {
-    this.organization.value.settings.plugins.set('cloudinaryKey', key);
+  set learnosityInitUrl(key: string | undefined) {
+    this.organization.value.settings.plugins.set('learnosityInitUrl', key);
     this.organization.save();
   }
 
@@ -55,11 +44,10 @@ export default class LearnosityEditor extends React.Component<
     this.state = {
       requestCredentials: false,
       showDialog: false,
-      apiKey: this.cloudinaryKey ? this.cloudinaryKey : '',
-      cloudName: this.cloudinaryCloud ? this.cloudinaryCloud : '',
-      selectedImagePublicId:
-        props.value && props.value.get && props.value.get('public_id')
-          ? props.value.get('public_id')
+      initUrl: this.learnosityInitUrl ? this.learnosityInitUrl : '',
+      selectedActivityReference:
+        props.value && props.value.get && props.value.get('reference')
+          ? props.value.get('reference')
           : '',
     };
   }
@@ -71,77 +59,58 @@ export default class LearnosityEditor extends React.Component<
     });
   }
 
-  private appendMediaLibraryScriptToPlugin() {
-    const previousScript = document.getElementById('cloudinaryScript');
-    if (!previousScript) {
-      const script = document.createElement('script');
-      script.async = true;
-      script.src = `https://media-library.cloudinary.com/global/all.js`;
-      script.id = 'cloudinaryScript';
-      document.head.appendChild(script);
-    }
-  }
-
-  private areCloudinaryCredentialsNotSet(): boolean {
+  private areLearnosityCredentialsNotSet(): boolean {
     return (
-      this.state.apiKey === '' ||
-      this.state.cloudName === '' ||
-      this.state.apiKey === undefined ||
-      this.state.cloudName === undefined
+      this.state.initUrl === '' ||
+      this.state.initUrl === undefined
     );
   }
 
-  private shouldRequestCloudinaryCredentials() {
-    return this.state.requestCredentials || this.areCloudinaryCredentialsNotSet();
+  private shouldRequestLearnosityCredentials() {
+    return this.state.requestCredentials || this.areLearnosityCredentialsNotSet();
   }
 
-  private updateCloudinaryCredentials(apiKey: string, cloudName: string) {
-    this.cloudinaryKey = apiKey;
-    this.cloudinaryCloud = cloudName;
+  private updateLearnosityCredentials(initUrl: string) {
+    this.learnosityInitUrl = initUrl;
     this.setState({
-      apiKey: this.cloudinaryKey,
-      cloudName: this.cloudinaryCloud,
+      initUrl: this.learnosityInitUrl,
     });
   }
 
-  private calculateChooseImageButtonVariant(): ButtonVariant {
-    return this.areCloudinaryCredentialsNotSet() ? 'contained' : 'text';
+  private calculateChooseActivityButtonVariant(): ButtonVariant {
+    return this.areLearnosityCredentialsNotSet() ? 'contained' : 'text';
   }
 
-  private selectImage(image: LearnosityActivity) {
-    this.props.onChange(image);
-    this.setState({ selectedImagePublicId: image.public_id });
+  private selectActivity(activity: LearnosityActivity) {
+    this.props.onChange(activity);
+    this.setState({ selectedActivityReference: activity.reference });
   }
 
   buildSelectedIdMessage(): string {
-    if (this.state.selectedImagePublicId) {
-      return `Public id: ${this.state.selectedImagePublicId}`;
+    if (this.state.selectedActivityReference) {
+      return `Activity reference: ${this.state.selectedActivityReference}`;
     }
 
-    return 'Please choose an image';
+    return 'Please choose an activity';
   }
 
-  buildChooseImageText(): string {
-    if (this.state.selectedImagePublicId) {
-      return `UPDATE IMAGE`;
+  buildChooseActivityText(): string {
+    if (this.state.selectedActivityReference) {
+      return `UPDATE ACTIVITY`;
     }
 
-    return 'CHOOSE IMAGE';
+    return 'CHOOSE ACTIVITY';
   }
 
   setCredentialsButtonText(): string {
-    return this.areCloudinaryCredentialsNotSet() ? 'Set credentials' : '...';
-  }
-
-  componentDidMount() {
-    this.appendMediaLibraryScriptToPlugin();
+    return this.areLearnosityCredentialsNotSet() ? 'Set credentials' : '...';
   }
 
   render() {
-    const shouldRequestCloudinarySettings = this.shouldRequestCloudinaryCredentials();
-    const setCredentialsButtonVariant = this.calculateChooseImageButtonVariant();
-    const selectedPublicIdMessage = this.buildSelectedIdMessage();
-    const chooseImageButtonText = this.buildChooseImageText();
+    const shouldRequestLearnositySettings = this.shouldRequestLearnosityCredentials();
+    const setCredentialsButtonVariant = this.calculateChooseActivityButtonVariant();
+    const selectedActivityReferenceMessage = this.buildSelectedIdMessage();
+    const chooseActivityButtonText = this.buildChooseActivityText();
     const setCredentialsButtonText = this.setCredentialsButtonText();
     const buttonContainerStyle = {
       display: 'grid',
@@ -152,29 +121,27 @@ export default class LearnosityEditor extends React.Component<
     };
     return (
       <div css={{ padding: '15px 0' }}>
-        <Typography variant="caption">Cloudinary image picker</Typography>
-        {shouldRequestCloudinarySettings && (
-          <CloudinayCredentialsDialog
+        <Typography variant="caption">Learnosity activity picker</Typography>
+        {shouldRequestLearnositySettings && (
+          <LearnosityCredentialsDialog
             openDialog={this.state.showDialog}
             closeDialog={this.closeDialog.bind(this)}
-            updateCloudinaryCredentials={this.updateCloudinaryCredentials.bind(this)}
-            apiKey={this.state.apiKey}
-            cloudName={this.state.cloudName}
+            updateLearnosityCredentials={this.updateLearnosityCredentials.bind(this)}
+            initUrl={this.state.initUrl}
           />
         )}
-        {!shouldRequestCloudinarySettings && (
-          <LearnosityPickerDialog
+        {!shouldRequestLearnositySettings && (
+          <LearnosityActivityPickerDialog
             openDialog={this.state.showDialog}
             closeDialog={this.closeDialog.bind(this)}
-            selectImage={this.selectImage.bind(this)}
-            apiKey={this.state.apiKey}
-            cloudName={this.state.cloudName}
+            selectActivity={this.selectActivity.bind(this)}
+            initUrl={this.state.initUrl}
           />
         )}
 
         <div css={buttonContainerStyle}>
           <Button
-            disabled={this.areCloudinaryCredentialsNotSet()}
+            disabled={this.areLearnosityCredentialsNotSet()}
             color="primary"
             variant="contained"
             onClick={() => {
@@ -183,7 +150,7 @@ export default class LearnosityEditor extends React.Component<
               });
             }}
           >
-            {chooseImageButtonText}
+            {chooseActivityButtonText}
           </Button>
 
           <Button
@@ -201,7 +168,7 @@ export default class LearnosityEditor extends React.Component<
         </div>
         <div>
           <Typography css={{ margin: '5px' }} variant="caption">
-            {selectedPublicIdMessage}
+            {selectedActivityReferenceMessage}
           </Typography>
         </div>
       </div>
