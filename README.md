@@ -19,4 +19,4 @@ To deploy a new version
     git commit -m "<message>"
     git push
 
-In builder, add a cdn URL for the `plugin-learnosity.system.js` file, e.g. `https://raw.githubusercontent.com/timbarclay/builder-learnosity-plugin/refs/heads/main/dist/plugin-learnosity.system.js`.
+In builder, add a cdn URL for the `plugin-learnosity.system.js` file, e.g. `https://cdn.jsdelivr.net/gh/timbarclay/builder-learnosity-plugin/dist/plugin-learnosity.system.js?pluginId=plugin-learnosity`.
