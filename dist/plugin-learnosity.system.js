@@ -1,6 +1,6 @@
 System.register(['react', '@emotion/core', '@builder.io/sdk', '@material-ui/core'], (function (exports) {
   'use strict';
-  var useState, useEffect, React, jsx, Builder, Dialog, DialogActions, Button, DialogTitle, DialogContent, TextField, Typography;
+  var useState, useEffect, React, jsx, Builder, Dialog, DialogContent, DialogActions, Button, DialogTitle, TextField, Typography;
   return {
     setters: [function (module) {
       useState = module.useState;
@@ -12,10 +12,10 @@ System.register(['react', '@emotion/core', '@builder.io/sdk', '@material-ui/core
       Builder = module.Builder;
     }, function (module) {
       Dialog = module.Dialog;
+      DialogContent = module.DialogContent;
       DialogActions = module.DialogActions;
       Button = module.Button;
       DialogTitle = module.DialogTitle;
-      DialogContent = module.DialogContent;
       TextField = module.TextField;
       Typography = module.Typography;
     }],
@@ -28,6 +28,7 @@ System.register(['react', '@emotion/core', '@builder.io/sdk', '@material-ui/core
           const [learnosityRequest, setLearnosityRequest] = useState(null);
           const [learnosityRequestBegun, setLearnosityRequestBegun] = useState(false);
           const [rendered, setRendered] = useState(false);
+          const [selectedActivity, setSelectedActivity] = useState(null);
           useEffect(() => {
               if (!rendered || begunLibraryLoad)
                   return;
@@ -77,10 +78,10 @@ System.register(['react', '@emotion/core', '@builder.io/sdk', '@material-ui/core
                       console.log('readyListener');
                       authorApi.on('open:activity', (event) => {
                           console.log('open:activity', event.data);
-                          props.selectActivity(event.data);
+                          setSelectedActivity(event.data);
                       });
                       authorApi.on('save:activity:success', (event) => {
-                          props.selectActivity(event.data);
+                          setSelectedActivity(event.data);
                       });
                   },
                   errorListener: (error) => {
@@ -88,12 +89,21 @@ System.register(['react', '@emotion/core', '@builder.io/sdk', '@material-ui/core
                   },
               });
           }, [libraryLoaded, learnosityRequest]);
+          function handleClickSelect() {
+              if (!selectedActivity) {
+                  return;
+              }
+              props.selectActivity(selectedActivity);
+              props.closeDialog();
+          }
           return (jsx(Dialog, { open: props.openDialog, onClose: props.closeDialog, fullWidth: true, maxWidth: "lg", onRendered: () => {
                   setRendered(true);
               } },
-              jsx("div", { id: "learnosity-author", css: { height: '90vh' } }),
+              jsx(DialogContent, null,
+                  jsx("div", { id: "learnosity-author", css: { height: '90vh' } })),
               jsx(DialogActions, null,
-                  jsx(Button, { autoFocus: true, onClick: props.closeDialog, color: "primary" }, "Close learnosity"))));
+                  jsx(Button, { autoFocus: true, onClick: props.closeDialog, color: "primary" }, "Close learnosity"),
+                  jsx(Button, { onClick: handleClickSelect, color: "primary", disabled: !selectedActivity }, selectedActivity ? `Select ${selectedActivity.reference}` : 'Select Activity'))));
       }
       function loadJS(url, callback) {
           const existingScript = document.getElementById('learnosity-library');

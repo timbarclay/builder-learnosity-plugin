@@ -1,7 +1,7 @@
 /** @jsx jsx */
 import React, { Fragment, useEffect, useState } from 'react';
 import { jsx } from '@emotion/core';
-import { Dialog, Button, DialogActions } from '@material-ui/core';
+import { Dialog, Button, DialogActions, DialogContent } from '@material-ui/core';
 
 interface LearnosityPickerDialogProps {
   openDialog: boolean;
@@ -20,6 +20,7 @@ export function LearnosityActivityPickerDialog(props: LearnosityPickerDialogProp
   const [learnosityRequest, setLearnosityRequest] = useState<any>(null)
   const [learnosityRequestBegun, setLearnosityRequestBegun] = useState(false)
   const [rendered, setRendered] = useState(false)
+  const [selectedActivity, setSelectedActivity] = useState<LearnosityActivity | null>(null)
 
   useEffect(() => {
     if (!rendered || begunLibraryLoad) return
@@ -73,11 +74,11 @@ export function LearnosityActivityPickerDialog(props: LearnosityPickerDialogProp
 
         authorApi.on('open:activity', (event: any) => {
           console.log('open:activity', event.data)
-          props.selectActivity(event.data)
+          setSelectedActivity(event.data)
         })
 
         authorApi.on('save:activity:success', (event: any) => {
-          props.selectActivity(event.data)
+          setSelectedActivity(event.data)
         })
       },
       errorListener: (error: any) => {
@@ -85,6 +86,14 @@ export function LearnosityActivityPickerDialog(props: LearnosityPickerDialogProp
       },
     })
   }, [libraryLoaded, learnosityRequest])
+
+  function handleClickSelect() {
+    if (!selectedActivity) {
+      return
+    }
+    props.selectActivity(selectedActivity)
+    props.closeDialog()
+  }
   
   return (
     <Dialog
@@ -96,10 +105,15 @@ export function LearnosityActivityPickerDialog(props: LearnosityPickerDialogProp
         setRendered(true)
       }}
     >
-      <div id="learnosity-author" css={{ height: '90vh' }} />
+      <DialogContent>
+        <div id="learnosity-author" css={{ height: '90vh' }} />
+      </DialogContent>
       <DialogActions>
         <Button autoFocus onClick={props.closeDialog} color="primary">
           Close learnosity
+        </Button>
+        <Button onClick={handleClickSelect} color="primary" disabled={!selectedActivity}>
+          {selectedActivity ? `Select ${selectedActivity.reference}` : 'Select Activity'}
         </Button>
       </DialogActions>
     </Dialog>
